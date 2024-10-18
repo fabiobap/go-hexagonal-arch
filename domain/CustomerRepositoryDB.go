@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-hexagonal-arch/errs"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -45,6 +46,27 @@ func (rdb CustomerRepositoryDB) FindAll() ([]Customer, error) {
 	}
 
 	return customers, nil
+}
+
+func (rdb CustomerRepositoryDB) FindById(id string) (*Customer, *errs.AppError) {
+	query := "select customer_id, name, city, zipcode, date_of_birth, status from customers where customer_id = ?"
+
+	row := rdb.client.QueryRow(query, id)
+
+	var c Customer
+
+	err := row.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.DateofBirth, &c.Status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errs.NewNotFoundError("customer not found")
+		} else {
+			log.Println("Error while scanning customer table " + err.Error())
+			return nil, errs.NewUnexpectedError("unexpected database error")
+		}
+	}
+
+	return &c, nil
+
 }
 
 func NewCustomerRepositoryDB() CustomerRepositoryDB {
@@ -90,6 +112,7 @@ func setDBData(db *DBData) {
 	}
 
 	dbPass := os.Getenv("DB_PASSWORD")
+
 	dbPort := os.Getenv("DB_PORT")
 	if dbPort == "" {
 		dbPort = "3307"
@@ -106,6 +129,4 @@ func setDBData(db *DBData) {
 	db.DBPass = dbPass
 	db.DBPort = dbPort
 	db.DBCon = dbCon
-
-	log.Println(db)
 }

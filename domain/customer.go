@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/go-hexagonal-arch/errs"
+
 type Customer struct {
 	Id          string
 	Name        string
@@ -11,4 +13,5 @@ type Customer struct {
 
 type CustomerRepository interface {
 	FindAll() ([]Customer, error)
+	FindById(string) (*Customer, *errs.AppError)
 }
