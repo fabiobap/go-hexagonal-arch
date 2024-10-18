@@ -3,10 +3,9 @@ package app
 import (
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/go-hexagonal-arch/service"
 )
 
 type Customer struct {
@@ -15,22 +14,18 @@ type Customer struct {
 	Zipcode string `json:"zip_code" xml:"zipcode"`
 }
 
-func getCustomer(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	fmt.Fprintf(w, vars["customer_id"])
+type CustomerHandlers struct {
+	service service.CustomerService
 }
 
-func greet(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Hello world")
-}
+func (ch *CustomerHandlers) getAllCustomers(w http.ResponseWriter, r *http.Request) {
+	// customers := []Customer{
+	// 	{"Jose", "Rio", "2342342"},
+	// 	{"Kleber", "Sampa", "2342342"},
+	// 	{"Joselito", "Brasilia", "2342342"},
+	// }
 
-func getAllCustomers(w http.ResponseWriter, r *http.Request) {
-	customers := []Customer{
-		{"Jose", "Rio", "2342342"},
-		{"Kleber", "Sampa", "2342342"},
-		{"Joselito", "Brasilia", "2342342"},
-	}
+	customers, _ := ch.service.GetAllCustomers()
 
 	if r.Header.Get("Content-Type") == "application/xml" {
 		w.Header().Add("Content-Type", "application/xml")
