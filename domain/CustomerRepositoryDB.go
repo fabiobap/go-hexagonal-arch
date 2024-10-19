@@ -24,13 +24,26 @@ type DBData struct {
 	DBPort string
 }
 
-func (rdb CustomerRepositoryDB) FindAll() ([]Customer, error) {
-	query := "select customer_id, name, city, zipcode, date_of_birth, status from customers"
+func (rdb CustomerRepositoryDB) FindAll(status string) ([]Customer, *errs.AppError) {
+	var query string
+	var rows *sql.Rows
+	var err error
 
-	rows, err := rdb.client.Query(query)
+	if status == "" {
+		query = "select customer_id, name, city, zipcode, date_of_birth, status from customers"
+		rows, err = rdb.client.Query(query)
+	} else {
+		query = "select customer_id, name, city, zipcode, date_of_birth, status from customers where status = ?"
+		rows, err = rdb.client.Query(query, status)
+	}
+
 	if err != nil {
-		log.Println("Error while querying customer table " + err.Error())
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, errs.NewNotFoundError("customers not found")
+		} else {
+			log.Println("Error while querying customer table " + err.Error())
+			return nil, errs.NewUnexpectedError("unexpected database error")
+		}
 	}
 
 	customers := make([]Customer, 0)
@@ -40,7 +53,7 @@ func (rdb CustomerRepositoryDB) FindAll() ([]Customer, error) {
 		err := rows.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.DateofBirth, &c.Status)
 		if err != nil {
 			log.Println("Error while scanning customer " + err.Error())
-			return nil, err
+			return nil, errs.NewUnexpectedError("unexpected database error")
 		}
 		customers = append(customers, c)
 	}
