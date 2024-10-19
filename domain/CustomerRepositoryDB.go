@@ -3,11 +3,11 @@ package domain
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"github.com/go-hexagonal-arch/errs"
+	"github.com/go-hexagonal-arch/logger"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -41,7 +41,7 @@ func (rdb CustomerRepositoryDB) FindAll(status string) ([]Customer, *errs.AppErr
 		if err == sql.ErrNoRows {
 			return nil, errs.NewNotFoundError("customers not found")
 		} else {
-			log.Println("Error while querying customer table " + err.Error())
+			logger.Error("Error while querying customer table " + err.Error())
 			return nil, errs.NewUnexpectedError("unexpected database error")
 		}
 	}
@@ -52,7 +52,7 @@ func (rdb CustomerRepositoryDB) FindAll(status string) ([]Customer, *errs.AppErr
 		var c Customer
 		err := rows.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.DateofBirth, &c.Status)
 		if err != nil {
-			log.Println("Error while scanning customer " + err.Error())
+			logger.Error("Error while scanning customer " + err.Error())
 			return nil, errs.NewUnexpectedError("unexpected database error")
 		}
 		customers = append(customers, c)
@@ -73,7 +73,7 @@ func (rdb CustomerRepositoryDB) FindById(id string) (*Customer, *errs.AppError) 
 		if err == sql.ErrNoRows {
 			return nil, errs.NewNotFoundError("customer not found")
 		} else {
-			log.Println("Error while scanning customer table " + err.Error())
+			logger.Error("Error while scanning customer table " + err.Error())
 			return nil, errs.NewUnexpectedError("unexpected database error")
 		}
 	}
