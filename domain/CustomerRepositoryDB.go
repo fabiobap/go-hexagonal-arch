@@ -9,10 +9,11 @@ import (
 	"github.com/go-hexagonal-arch/errs"
 	"github.com/go-hexagonal-arch/logger"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 type CustomerRepositoryDB struct {
-	client *sql.DB
+	client *sqlx.DB
 }
 
 type DBData struct {
@@ -26,36 +27,20 @@ type DBData struct {
 
 func (rdb CustomerRepositoryDB) FindAll(status string) ([]Customer, *errs.AppError) {
 	var query string
-	var rows *sql.Rows
 	var err error
+	customers := make([]Customer, 0)
 
 	if status == "" {
 		query = "select customer_id, name, city, zipcode, date_of_birth, status from customers"
-		rows, err = rdb.client.Query(query)
+		err = rdb.client.Select(&customers, query)
 	} else {
 		query = "select customer_id, name, city, zipcode, date_of_birth, status from customers where status = ?"
-		rows, err = rdb.client.Query(query, status)
+		err = rdb.client.Select(&customers, query, status)
 	}
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errs.NewNotFoundError("customers not found")
-		} else {
-			logger.Error("Error while querying customer table " + err.Error())
-			return nil, errs.NewUnexpectedError("unexpected database error")
-		}
-	}
-
-	customers := make([]Customer, 0)
-
-	for rows.Next() {
-		var c Customer
-		err := rows.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.DateofBirth, &c.Status)
-		if err != nil {
-			logger.Error("Error while scanning customer " + err.Error())
-			return nil, errs.NewUnexpectedError("unexpected database error")
-		}
-		customers = append(customers, c)
+		logger.Error("Error while querying customer table " + err.Error())
+		return nil, errs.NewUnexpectedError("unexpected database error")
 	}
 
 	return customers, nil
@@ -63,12 +48,10 @@ func (rdb CustomerRepositoryDB) FindAll(status string) ([]Customer, *errs.AppErr
 
 func (rdb CustomerRepositoryDB) FindById(id string) (*Customer, *errs.AppError) {
 	query := "select customer_id, name, city, zipcode, date_of_birth, status from customers where customer_id = ?"
-
-	row := rdb.client.QueryRow(query, id)
-
 	var c Customer
 
-	err := row.Scan(&c.Id, &c.Name, &c.City, &c.Zipcode, &c.DateofBirth, &c.Status)
+	err := rdb.client.Get(&c, query, id)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errs.NewNotFoundError("customer not found")
@@ -86,9 +69,8 @@ func NewCustomerRepositoryDB() CustomerRepositoryDB {
 	var dbCreds = DBData{}
 	setDBData(&dbCreds)
 
-	db, err := sql.Open(
+	db, err := sqlx.Open(
 		dbCreds.DBCon,
-		// fmt.Sprintf("root:r00tzer@tcp(localhost:3307)/banking"),
 		fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
 			dbCreds.DBUser,
 			dbCreds.DBPass,
