@@ -12,7 +12,10 @@ import (
 func Start() {
 	mux := mux.NewRouter()
 
-	ch := CustomerHandlers{service: service.NewCustomerService(domain.NewCustomerRepositoryDB())}
+	dbClient := getDBClient()
+	customerRepositoryDB := domain.NewCustomerRepositoryDB(dbClient)
+	// accountRepositoryDB := domain.NewAccountRepositoryDB(dbClient)
+	ch := CustomerHandlers{service: service.NewCustomerService(customerRepositoryDB)}
 
 	mux.HandleFunc("/customers", ch.getAllCustomers).Methods(http.MethodGet)
 	mux.HandleFunc("/customers/{customer_id:[0-9]+}", ch.getCustomer).Methods(http.MethodGet)
