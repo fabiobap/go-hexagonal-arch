@@ -15,7 +15,7 @@ type AccountRepositoryDB struct {
 func (d AccountRepositoryDB) Save(a Account) (*Account, *errs.AppError) {
 	query := "INSERT INTO accounts (customer_id, opening_date, account_type, amount, status) values (?,?,?,?,?)"
 
-	res, err := d.client.Exec(query, a.CustomerId, a.OpeningDate, a.AccountType, a.AccountId, a.Status)
+	res, err := d.client.Exec(query, a.CustomerId, a.OpeningDate, a.AccountType, a.Amount, a.Status)
 	if err != nil {
 		logger.Error("Error while creating new account: " + err.Error())
 		return nil, errs.NewUnexpectedError("Unexpected error from database")
@@ -32,5 +32,5 @@ func (d AccountRepositoryDB) Save(a Account) (*Account, *errs.AppError) {
 }
 
 func NewAccountRepositoryDB(dbClient *sqlx.DB) AccountRepositoryDB {
-	return NewAccountRepositoryDB(dbClient)
+	return AccountRepositoryDB{client: dbClient}
 }
