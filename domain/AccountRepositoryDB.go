@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/go-hexagonal-arch/errs"
@@ -86,8 +85,7 @@ func (d AccountRepositoryDB) SaveTransaction(t Transaction) (*Transaction, *errs
 func (d AccountRepositoryDB) FindBy(accountId string) (*Account, *errs.AppError) {
 	sqlGetAccount := "SELECT account_id, customer_id, opening_date, account_type, amount from accounts where account_id = ?"
 	var account Account
-	log.Println(accountId)
-	log.Println(account)
+
 	err := d.client.Get(&account, sqlGetAccount, accountId)
 	if err != nil {
 		logger.Error("Error while fetching account information: " + err.Error())
